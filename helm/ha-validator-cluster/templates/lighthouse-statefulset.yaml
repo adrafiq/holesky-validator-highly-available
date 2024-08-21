@@ -1,0 +1,62 @@
+# templates/lighthouse-statefulset.yaml
+{{- if .Values.lighthouse.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-lighthouse
+spec:
+  serviceName: "lighthouse"
+  replicas: {{ .Values.lighthouse.replicaCount }}
+  selector:
+    matchLabels:
+      app: lighthouse
+  template:
+    metadata:
+      labels:
+        app: lighthouse
+    spec:
+      containers:
+      - name: lighthouse
+        image: sigp/lighthouse:{{ .Values.global.lighthouseVersion }}
+        ports:
+        - containerPort: 9000
+        - containerPort: 5052
+        - containerPort: 5054
+        resources:
+          {{- toYaml .Values.lighthouse.resources | nindent 12 }}
+        command:
+        - /bin/sh
+        - -c
+        - >
+          lighthouse beacon_node
+          --network={{ .Values.global.network }}
+          --checkpoint-sync-url={{ .Values.lighthouse.checkpointSyncUrl }}
+          --execution-endpoint=http://{{ .Release.Name }}-geth:8551
+          --execution-jwt=/opt/jwt/jwt.hex
+          --http
+          --http-address=0.0.0.0
+          --http-port=5052
+          --metrics
+          --metrics-address=0.0.0.0
+          --metrics-port=5054
+          --metrics-allow-origin=*
+          --validator-monitor-auto
+        volumeMounts:
+        - name: lighthouse-data
+          mountPath: /opt/app/beacon
+        - name: jwt
+          mountPath: /opt/jwt
+      volumes:
+      - name: jwt
+        secret:
+          secretName: {{ .Release.Name }}-jwt
+  volumeClaimTemplates:
+  - metadata:
+      name: lighthouse-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.lighthouse.storage.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.lighthouse.storage.size }}
+{{- end }}

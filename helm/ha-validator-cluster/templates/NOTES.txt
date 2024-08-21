@@ -1,0 +1,26 @@
+Thank you for installing {{ .Chart.Name }}.
+
+IMPORTANT: Your validator keys are not managed by this Helm chart. You need to create Kubernetes Secrets
+for your validator keys before running the validators. Use the following commands to create the secrets:
+
+
+For Charon keys:
+kubectl create secret generic {{ .Release.Name }}-charon-keys --from-file=/path/to/charon/keys
+
+For each validator type:
+{{- range .Values.validators.types }}
+kubectl create secret generic {{ $.Release.Name }}-validator-keys-{{ .name }} --from-file=/path/to/{{ .name }}/keys
+{{- end }}
+
+Replace '/path/to/keys' with the actual path to your key files.
+
+CAUTION: Keep your validator keys safe and secure. Never share them or expose them in your cluster configuration.
+
+To get the status of your deployment, run:
+  kubectl get pods -l "release={{ .Release.Name }}"
+
+To access Grafana, run:
+  kubectl port-forward svc/{{ .Release.Name }}-grafana 3000:3000
+Then visit http://localhost:3000 in your web browser.
+
+For more information and troubleshooting, please refer to the chart's documentation.

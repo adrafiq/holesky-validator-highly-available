@@ -1,0 +1,52 @@
+{{- if .Values.charonRelay.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-charon-relay
+spec:
+  serviceName: "charon-relay"
+  replicas: {{ .Values.charonRelay.replicaCount }}
+  selector:
+    matchLabels:
+      app: charon-relay
+  template:
+    metadata:
+      labels:
+        app: charon-relay
+    spec:
+      containers:
+      - name: charon-relay
+        image: obolnetwork/charon:{{ .Values.global.charonVersion }}
+        ports:
+        - containerPort: 3640
+        command:
+        - /bin/sh
+        - -c
+        - >
+          charon relay
+          --http-address=0.0.0.0:3640
+          --p2p-external-hostname=$(POD_NAME).charon-relay.$(NAMESPACE).svc.cluster.local
+          --data-dir=/data
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.charonRelay.storage.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.charonRelay.storage.size }}
+{{- end }}
+

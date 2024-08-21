@@ -1,0 +1,101 @@
+---
+# ConfigMap for Grafana datasource
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-datasource
+data:
+  datasource.yml: |
+    {{- .Files.Get "grafana/datasource.yml" | nindent 4 }}
+
+---
+# ConfigMap for Grafana dashboards provider
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-dashboards-provider
+data:
+  dashboards.yml: |
+    {{- .Files.Get "grafana/dashboards.yml" | nindent 4 }}
+
+---
+# ConfigMap for Grafana main configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-config
+data:
+  grafana.ini: |
+    {{- .Files.Get "grafana/grafana.ini" | nindent 4 }}
+
+---
+# ConfigMap for Grafana dashboards
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-dashboards
+data:
+  {{- range $path, $_ := .Files.Glob "grafana/dashboards/*.json" }}
+  {{ base $path }}: |
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}
+
+---
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:{{ .Values.monitoring.grafana.version }}
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: datasource-config
+          mountPath: /etc/grafana/provisioning/datasources/datasource.yml
+          subPath: datasource.yml
+        - name: dashboards-provider-config
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml
+          subPath: dashboards.yml
+        - name: grafana-config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+        - name: dashboards
+          mountPath: /etc/grafana/dashboards
+      volumes:
+      - name: datasource-config
+        configMap:
+          name: {{ .Release.Name }}-grafana-datasource
+      - name: dashboards-provider-config
+        configMap:
+          name: {{ .Release.Name }}-grafana-dashboards-provider
+      - name: grafana-config
+        configMap:
+          name: {{ .Release.Name }}-grafana-config
+      - name: dashboards
+        configMap:
+          name: {{ .Release.Name }}-grafana-dashboards
+
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000

@@ -1,0 +1,62 @@
+---
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-geth
+spec:
+  selector:
+    app: geth
+  ports:
+    - port: 8545
+      targetPort: 8545
+    - port: 8551
+      targetPort: 8551
+    - port: 30303
+      targetPort: 30303
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-lighthouse
+spec:
+  selector:
+    app: lighthouse
+  ports:
+    - port: 5052
+      targetPort: 5052
+    - port: 5054
+      targetPort: 5054
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-charon-relay
+spec:
+  selector:
+    app: charon-relay
+  ports:
+    - port: 3640
+      targetPort: 3640
+  clusterIP: None
+---
+{{- range $index, $validator := .Values.validators.types }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ $validator.name }}-validator
+spec:
+  selector:
+    app: {{ $validator.name }}-validator
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+  clusterIP: None
+  ports:
+    - port: 3600
+      targetPort: 3600
+    - port: 3620
+      targetPort: 3620
+---
+{{- end }}

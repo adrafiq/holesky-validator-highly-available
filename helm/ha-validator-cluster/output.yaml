@@ -1,0 +1,2019 @@
+---
+# Source: ha-validator-cluster/templates/secrets.yaml
+# templates/secrets.yamlapiVersion: v1
+kind: Secret
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-charon-node0-keys
+type: Opaque
+data:
+  charon-enr-private-key: 
+  cluster-lock.json:
+---
+# Source: ha-validator-cluster/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-validator-node0-keys
+type: Opaque
+data:
+  keystore-0.json: 
+  keystore-0.txt:
+---
+# Source: ha-validator-cluster/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-charon-node1-keys
+type: Opaque
+data:
+  charon-enr-private-key: 
+  cluster-lock.json:
+---
+# Source: ha-validator-cluster/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-validator-node1-keys
+type: Opaque
+data:
+  keystore-0.json: 
+  keystore-0.txt:
+---
+# Source: ha-validator-cluster/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-jwt-secret
+type: Opaque
+data:
+  jwt.hex:
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+# templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets: ['ha-validator-charon-node-exporter:9100']
+      - job_name: 'validators'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: validator
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: ${1}:3620
+      - job_name: 'geth'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: geth
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: ${1}:8545
+      - job_name: 'lighthouse'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: lighthouse
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: ${1}:5054
+      - job_name: 'charon-relay'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: charon-relay
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: ${1}:3640
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-datasources
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://ha-validator-charon-prometheus:9090
+      access: proxy
+      isDefault: true
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-dashboards
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /etc/grafana/dashboards
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-dashboard-definitions
+data:
+  eth-staking-overview.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": 1,
+      "links": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 2,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.2.0",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "rate(charon_validator_duties_performed_total[5m])",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Validator Duties Performed",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "schemaVersion": 26,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Ethereum Staking Overview",
+      "uid": "ethereum-staking-overview",
+      "version": 1
+    }
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-config
+data:
+  grafana.ini: |
+    [auth.anonymous]
+    enabled = true
+    org_name = Main Org.
+    org_role = Viewer
+
+    [dashboards]
+    default_home_dashboard_path = /etc/grafana/dashboards/eth-staking-overview.json
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-lighthouse-config
+data:
+  lighthouse-config.yaml: |
+    network: holesky
+    datadir: /opt/app/beacon
+    http: true
+    http-address: 0.0.0.0
+    http-port: 5052
+    metrics: true
+    metrics-address: 0.0.0.0
+    metrics-port: 5054
+    metrics-allow-origin: "*"
+    validator-monitor-auto: true
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-charon-config
+data:
+  charon-config.yaml: |
+    log-level: info
+    log-format: json
+    beacon-node-endpoints: 
+      - http://ha-validator-charon-lighthouse:5052
+    p2p-relays:
+      - http://ha-validator-charon-charon-relay:3640/enr
+    monitoring-address: 0.0.0.0:3620
+    validator-api-address: 0.0.0.0:3600
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# ConfigMap for Grafana datasource
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-datasource
+data:
+  datasource.yml: |
+    # config file version
+    apiVersion: 1
+    
+    # list of datasources that should be deleted from the database
+    deleteDatasources:
+      - name: Prometheus
+        orgId: 1
+    
+    # list of datasources to insert/update depending
+    # whats available in the database
+    datasources:
+      # <string, required> name of the datasource. Required
+      - name: Prometheus
+        # <string, required> datasource type. Required
+        type: prometheus
+        # <int> org id. will default to orgId 1 if not specified
+        orgId: 1
+        # <string> url
+        url: http://prometheus:9090
+        # <string> database password, if used
+        password:
+        # <string> database user, if used
+        user:
+        # <string> database name, if used
+        database:
+        # <bool> enable/disable basic auth
+        basicAuth: false
+        # <bool> enable/disable with credentials headers
+        withCredentials:
+        # <bool> mark as default datasource. Max one per org
+        isDefault: true
+        # <map> fields that will be converted to json and stored in json_data
+        jsonData:
+          graphiteVersion: "1.1"
+          tlsAuth: false
+          tlsAuthWithCACert: false
+        # <string> json object of data that will be encrypted.
+        secureJsonData:
+          tlsCACert: "..."
+          tlsClientCert: "..."
+          tlsClientKey: "..."
+        version: 1
+        # <bool> allow users to edit datasources from the UI.
+        editable: true
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# ConfigMap for Grafana dashboards provider
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-dashboards-provider
+data:
+  dashboards.yml: |
+    apiVersion: 1
+    
+    providers:
+      - name: dashboards
+        type: file
+        updateIntervalSeconds: 30
+        options:
+          path: /etc/dashboards
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# ConfigMap for Grafana main configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-config
+data:
+  grafana.ini: |
+    [auth.anonymous]
+    enabled = true
+    org_role = Admin
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# ConfigMap for Grafana dashboards
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-grafana-dashboards
+data:
+  local_cluster_dash.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": 2,
+      "links": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 8,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "p2p_ping_latency_secs_sum{job=\"charon-0\"} / p2p_ping_latency_secs_count",
+              "interval": "",
+              "legendFormat": "{{job}}-{{peer}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Peer Latency Observed by Charon 0",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 10,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "p2p_ping_latency_secs_sum{job=\"charon-1\"} / p2p_ping_latency_secs_count",
+              "interval": "",
+              "legendFormat": "{{job}}-{{peer}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Peer Latency Observed by Charon 1",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 11,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "p2p_ping_latency_secs_sum{job=\"charon-2\"} / p2p_ping_latency_secs_count",
+              "interval": "",
+              "legendFormat": "{{job}}-{{peer}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Peer Latency Observed by Charon 2",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 9,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "p2p_ping_latency_secs_sum{job=\"charon-3\"} / p2p_ping_latency_secs_count",
+              "interval": "",
+              "legendFormat": "{{job}}-{{peer}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Peer Latency Observed by Charon 3",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "datasource": null,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "fieldOptions": {
+              "calcs": [
+                "mean"
+              ],
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                },
+                "unit": "dateTimeAsIso"
+              },
+              "overrides": [],
+              "values": false
+            },
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto"
+          },
+          "pluginVersion": "6.7.3",
+          "targets": [
+            {
+              "expr": "app_start_time_secs * 1000",
+              "interval": "",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Node start time",
+          "type": "stat"
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
+          "id": 4,
+          "links": [],
+          "options": {
+            "colorMode": "value",
+            "fieldOptions": {
+              "calcs": [
+                "mean"
+              ],
+              "defaults": {
+                "mappings": [
+                  {
+                    "id": 0,
+                    "op": "=",
+                    "text": "N/A",
+                    "type": 1,
+                    "value": "null"
+                  }
+                ],
+                "nullValueMode": "connected",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": [],
+              "values": false
+            },
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "horizontal"
+          },
+          "pluginVersion": "6.7.3",
+          "targets": [
+            {
+              "expr": "core_scheduler_current_slot",
+              "interval": "",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Latest Slot",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "description": "Total request length / Total number of requests made to beacon nodes by charon clients",
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 24
+          },
+          "hiddenSeries": false,
+          "id": 2,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "app_eth2_latency_seconds_sum / app_eth2_latency_seconds_count",
+              "instant": false,
+              "interval": "",
+              "legendFormat": "{{job}}-{{endpoint}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Beacon Node Latency",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": "Seconds",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 24
+          },
+          "hiddenSeries": false,
+          "id": 13,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "rate(p2p_ping_error_total[5m])",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Ping Errors between clients in the last 5 minutes",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 22,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {
+        "refresh_intervals": [
+          "5s",
+          "10s",
+          "30s",
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "2h",
+          "1d"
+        ]
+      },
+      "timezone": "",
+      "title": "Local Docker Cluster Dashboard",
+      "uid": "laEp8vupp",
+      "variables": {
+        "list": []
+      },
+      "version": 1
+    }
+  simnet_dash.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": 1,
+      "links": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "hiddenSeries": false,
+          "id": 6,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "app_start_time_secs",
+              "interval": "",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Panel Title",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": null,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 4,
+          "links": [],
+          "options": {
+            "colorMode": "value",
+            "fieldOptions": {
+              "calcs": [
+                "last"
+              ],
+              "defaults": {
+                "mappings": [
+                  {
+                    "id": 0,
+                    "op": "=",
+                    "text": "N/A",
+                    "type": 1,
+                    "value": "null"
+                  }
+                ],
+                "nullValueMode": "connected",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                },
+                "unit": "none"
+              },
+              "overrides": [],
+              "values": false
+            },
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "horizontal"
+          },
+          "pluginVersion": "6.7.3",
+          "targets": [
+            {
+              "expr": "core_scheduler_current_slot",
+              "interval": "",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Charon Node Observed Slot",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 2,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "app_eth2_latency_seconds_sum",
+              "instant": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Eth2 Latency",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 22,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {
+        "refresh_intervals": [
+          "5s",
+          "10s",
+          "30s",
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "2h",
+          "1d"
+        ]
+      },
+      "timezone": "",
+      "title": "Simnet Dashboard",
+      "uid": "laEp8vu7z",
+      "variables": {
+        "list": []
+      },
+      "version": 1
+    }
+---
+# Source: ha-validator-cluster/templates/prometheus.yaml
+# Prometheus ConfigMap (using values)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-validator-charon-prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      evaluation_interval: 30s
+      scrape_interval: 30s
+    remote_write:
+    - authorization:
+        credentials: $PROM_REMOTE_WRITE_TOKEN
+      url: https://vm.monitoring.gcp.obol.tech/write
+      write_relabel_configs:
+      - action: keep
+        regex: charon(.*)
+        source_labels:
+        - job
+    scrape_configs:
+    - job_name: charon-0
+      static_configs:
+      - targets:
+        - '{{ .Release.Name }}-lighthouse-validator-0.{{ .Release.Name }}-lighthouse-validator:3620'
+    - job_name: charon-1
+      static_configs:
+      - targets:
+        - '{{ .Release.Name }}-nimbus-validator-0.{{ .Release.Name }}-nimbus-validator:3620'
+    - job_name: validator 1 Lighthouse
+      static_configs:
+      - targets:
+        - '{{ .Release.Name }}-lighthouse-validator-0.{{ .Release.Name }}-lighthouse-validator:5064'
+    - job_name: validator 2 Nimbus
+      static_configs:
+      - targets:
+        - '{{ .Release.Name }}-nimbus-validator-0.{{ .Release.Name }}-nimbus-validator:8008'
+    - job_name: node-exporter
+      static_configs:
+      - targets:
+        - '{{ .Release.Name }}-node-exporter:9100'
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+# Source: ha-validator-cluster/templates/prometheus.yaml
+# Prometheus Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+# Source: ha-validator-cluster/templates/services.yaml
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-geth
+spec:
+  selector:
+    app: geth
+  ports:
+    - port: 8545
+      targetPort: 8545
+    - port: 8551
+      targetPort: 8551
+    - port: 30303
+      targetPort: 30303
+  clusterIP: None
+---
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-lighthouse
+spec:
+  selector:
+    app: lighthouse
+  ports:
+    - port: 5052
+      targetPort: 5052
+    - port: 5054
+      targetPort: 5054
+  clusterIP: None
+---
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-charon-relay
+spec:
+  selector:
+    app: charon-relay
+  ports:
+    - port: 3640
+      targetPort: 3640
+  clusterIP: None
+---
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-lighthouse-validator
+spec:
+  selector:
+    app: lighthouse-validator
+    app.kubernetes.io/name: ha-validator-cluster
+    app.kubernetes.io/instance: ha-validator-charon
+  clusterIP: None
+  ports:
+    - port: 3600
+      targetPort: 3600
+    - port: 3620
+      targetPort: 3620
+---
+# Source: ha-validator-cluster/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ha-validator-charon-nimbus-validator
+spec:
+  selector:
+    app: nimbus-validator
+    app.kubernetes.io/name: ha-validator-cluster
+    app.kubernetes.io/instance: ha-validator-charon
+  clusterIP: None
+  ports:
+    - port: 3600
+      targetPort: 3600
+    - port: 3620
+      targetPort: 3620
+---
+# Source: ha-validator-cluster/templates/grafana.yaml
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-validator-charon-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.3.3
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: datasource-config
+          mountPath: /etc/grafana/provisioning/datasources/datasource.yml
+          subPath: datasource.yml
+        - name: dashboards-provider-config
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml
+          subPath: dashboards.yml
+        - name: grafana-config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+        - name: dashboards
+          mountPath: /etc/grafana/dashboards
+      volumes:
+      - name: datasource-config
+        configMap:
+          name: ha-validator-charon-grafana-datasource
+      - name: dashboards-provider-config
+        configMap:
+          name: ha-validator-charon-grafana-dashboards-provider
+      - name: grafana-config
+        configMap:
+          name: ha-validator-charon-grafana-config
+      - name: dashboards
+        configMap:
+          name: ha-validator-charon-grafana-dashboards
+---
+# Source: ha-validator-cluster/templates/prometheus.yaml
+# Prometheus Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ha-validator-charon-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.50.1
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus"
+          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+          - "--web.console.templates=/usr/share/prometheus/consoles"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
+        - name: prometheus-storage
+          mountPath: /prometheus
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: ha-validator-charon-prometheus-config
+      - name: prometheus-storage
+        emptyDir: {}  # Consider using a PersistentVolume for production
+---
+# Source: ha-validator-cluster/templates/charon-relay-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ha-validator-charon-charon-relay
+spec:
+  serviceName: "charon-relay"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: charon-relay
+  template:
+    metadata:
+      labels:
+        app: charon-relay
+    spec:
+      containers:
+      - name: charon-relay
+        image: obolnetwork/charon:v1.0.0
+        ports:
+        - containerPort: 3640
+        command:
+        - /bin/sh
+        - -c
+        - >
+          charon relay
+          --http-address=0.0.0.0:3640
+          --p2p-external-hostname=$(POD_NAME).charon-relay.$(NAMESPACE).svc.cluster.local
+          --data-dir=/data
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 10Gi
+---
+# Source: ha-validator-cluster/templates/geth-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ha-validator-charon-geth
+spec:
+  serviceName: "geth"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geth
+  template:
+    metadata:
+      labels:
+        app: geth
+    spec:
+      containers:
+      - name: geth
+        image: ethereum/client-go:v1.14.8
+        ports:
+        - containerPort: 30303
+        - containerPort: 8545
+        - containerPort: 8551
+        resources:
+            limits:
+              cpu: 2
+              memory: 8Gi
+            requests:
+              cpu: 1
+              memory: 4Gi
+        command:
+        - /bin/sh
+        - -c
+        - >
+          geth
+          --holesky
+          --http
+          --http.addr=0.0.0.0
+          --http.vhosts=*
+          --http.api=eth,net,engine,admin
+          --authrpc.addr=0.0.0.0
+          --authrpc.port=8551
+          --authrpc.vhosts=*
+          --authrpc.jwtsecret=/root/.ethereum/jwt.hex
+          --syncmode=snap
+        volumeMounts:
+        - name: geth-data
+          mountPath: /root/.ethereum
+        - name: jwt
+          mountPath: /root/.ethereum/jwt.hex
+          subPath: jwt.hex
+      volumes:
+      - name: jwt
+        secret:
+          secretName: ha-validator-charon-jwt
+  volumeClaimTemplates:
+  - metadata:
+      name: geth-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Ti
+---
+# Source: ha-validator-cluster/templates/lighthouse-statefulset.yaml
+# templates/lighthouse-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ha-validator-charon-lighthouse
+spec:
+  serviceName: "lighthouse"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lighthouse
+  template:
+    metadata:
+      labels:
+        app: lighthouse
+    spec:
+      containers:
+      - name: lighthouse
+        image: sigp/lighthouse:v5.3.0
+        ports:
+        - containerPort: 9000
+        - containerPort: 5052
+        - containerPort: 5054
+        resources:
+            limits:
+              cpu: 2
+              memory: 8Gi
+            requests:
+              cpu: 1
+              memory: 4Gi
+        command:
+        - /bin/sh
+        - -c
+        - >
+          lighthouse beacon_node
+          --network=holesky
+          --checkpoint-sync-url=https://checkpoint-sync.holesky.ethpandaops.ios
+          --execution-endpoint=http://ha-validator-charon-geth:8551
+          --execution-jwt=/opt/jwt/jwt.hex
+          --http
+          --http-address=0.0.0.0
+          --http-port=5052
+          --metrics
+          --metrics-address=0.0.0.0
+          --metrics-port=5054
+          --metrics-allow-origin=*
+          --validator-monitor-auto
+        volumeMounts:
+        - name: lighthouse-data
+          mountPath: /opt/app/beacon
+        - name: jwt
+          mountPath: /opt/jwt
+      volumes:
+      - name: jwt
+        secret:
+          secretName: ha-validator-charon-jwt
+  volumeClaimTemplates:
+  - metadata:
+      name: lighthouse-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 100Gi
+---
+# Source: ha-validator-cluster/templates/validator-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-lighthouse-validator
+spec:
+  serviceName: lighthouse-validator
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lighthouse-validator
+      app.kubernetes.io/name: ha-validator-cluster
+      app.kubernetes.io/instance: ha-validator-charon
+  template:
+    metadata:
+      labels:
+        app: lighthouse-validator
+        app.kubernetes.io/name: ha-validator-cluster
+        app.kubernetes.io/instance: ha-validator-charon
+    spec:
+      containers:
+      - name: charon
+        image: obolnetwork/charon:v1.0.0
+        env:
+        - name: CHARON_BEACON_NODE_ENDPOINTS
+          value: "http://ha-validator-charon-ha-validator-cluster-lighthouse:5052"
+        - name: CHARON_P2P_EXTERNAL_HOSTNAME
+          value: $(POD_NAME).lighthouse-validator.$(NAMESPACE).svc.cluster.local
+        - name: CHARON_P2P_RELAYS
+          value: "http://ha-validator-charon-ha-validator-cluster-charon-relay:3640/enr"
+        - name: CHARON_PRIVATE_KEY_FILE
+          value: "/data/charon/charon-enr-private-key"
+        - name: CHARON_LOCK_FILE
+          value: "/data/charon/cluster-lock.json"
+        volumeMounts:
+        - name: charon-data
+          mountPath: /data/charon
+        - name: charon-keys
+          mountPath: /data/charon/charon-enr-private-key
+          subPath: charon-enr-private-key
+        - name: charon-keys
+          mountPath: /data/charon/cluster-lock.json
+          subPath: cluster-lock.json
+      - name: validator
+        image: sigp/lighthouse:v5.3.0
+        resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+        env:
+        - name: BEACON_NODE_ENDPOINT
+          value: "http://localhost:3600"
+        volumeMounts:
+        - name: validator-data
+          mountPath: /data/validator
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.json
+          subPath: keystore-0.json
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.txt
+          subPath: keystore-0.txt
+      volumes:
+      - name: charon-keys
+        secret:
+          secretName: ha-validator-charon-ha-validator-cluster-charon-node0-keys
+      - name: validator-keys
+        secret:
+          secretName: ha-validator-charon-ha-validator-cluster-validator-node0-keys
+  volumeClaimTemplates:
+  - metadata:
+      name: charon-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: validator-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 100Gi
+---
+# Source: ha-validator-cluster/templates/validator-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ha-validator-charon-ha-validator-cluster-nimbus-validator
+spec:
+  serviceName: nimbus-validator
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nimbus-validator
+      app.kubernetes.io/name: ha-validator-cluster
+      app.kubernetes.io/instance: ha-validator-charon
+  template:
+    metadata:
+      labels:
+        app: nimbus-validator
+        app.kubernetes.io/name: ha-validator-cluster
+        app.kubernetes.io/instance: ha-validator-charon
+    spec:
+      containers:
+      - name: charon
+        image: obolnetwork/charon:v1.0.0
+        env:
+        - name: CHARON_BEACON_NODE_ENDPOINTS
+          value: "http://ha-validator-charon-ha-validator-cluster-lighthouse:5052"
+        - name: CHARON_P2P_EXTERNAL_HOSTNAME
+          value: $(POD_NAME).nimbus-validator.$(NAMESPACE).svc.cluster.local
+        - name: CHARON_P2P_RELAYS
+          value: "http://ha-validator-charon-ha-validator-cluster-charon-relay:3640/enr"
+        - name: CHARON_PRIVATE_KEY_FILE
+          value: "/data/charon/charon-enr-private-key"
+        - name: CHARON_LOCK_FILE
+          value: "/data/charon/cluster-lock.json"
+        volumeMounts:
+        - name: charon-data
+          mountPath: /data/charon
+        - name: charon-keys
+          mountPath: /data/charon/charon-enr-private-key
+          subPath: charon-enr-private-key
+        - name: charon-keys
+          mountPath: /data/charon/cluster-lock.json
+          subPath: cluster-lock.json
+      - name: validator
+        image: statusim/nimbus-eth2:multiarch-v23.7.0
+        resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+        env:
+        - name: BEACON_NODE_ENDPOINT
+          value: "http://localhost:3600"
+        volumeMounts:
+        - name: validator-data
+          mountPath: /data/validator
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.json
+          subPath: keystore-0.json
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.txt
+          subPath: keystore-0.txt
+      volumes:
+      - name: charon-keys
+        secret:
+          secretName: ha-validator-charon-ha-validator-cluster-charon-node1-keys
+      - name: validator-keys
+        secret:
+          secretName: ha-validator-charon-ha-validator-cluster-validator-node1-keys
+  volumeClaimTemplates:
+  - metadata:
+      name: charon-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: validator-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 100Gi
+---
+# Source: ha-validator-cluster/templates/configmaps.yaml
+# ... (previous content remains the same)
+---
+# Source: ha-validator-cluster/templates/prometheus.yaml
+# Optional: PersistentVolumeClaim for Prometheus data (uncomment for production use)
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: ha-validator-charon-prometheus-storage
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 10Gi  # Adjust size as needed
+---
+# Source: ha-validator-cluster/templates/validator-statefulset.yaml
+# templates/validator-statefulsets.yaml

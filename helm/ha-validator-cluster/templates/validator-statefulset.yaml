@@ -1,0 +1,88 @@
+# templates/validator-statefulsets.yaml
+{{- range $index, $type := .Values.validators.types }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ha-validator-cluster.fullname" $ }}-{{ $type.name }}-validator
+spec:
+  serviceName: {{ $type.name }}-validator
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $type.name }}-validator
+      {{- include "ha-validator-cluster.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ $type.name }}-validator
+        {{- include "ha-validator-cluster.selectorLabels" $ | nindent 8 }}
+    spec:
+      containers:
+      - name: charon
+        image: obolnetwork/charon:{{ $.Values.global.charonVersion }}
+        env:
+        - name: CHARON_BEACON_NODE_ENDPOINTS
+          value: "http://{{ include "ha-validator-cluster.fullname" $ }}-lighthouse:5052"
+        - name: CHARON_P2P_EXTERNAL_HOSTNAME
+          value: $(POD_NAME).{{ $type.name }}-validator.$(NAMESPACE).svc.cluster.local
+        - name: CHARON_P2P_RELAYS
+          value: "http://{{ include "ha-validator-cluster.fullname" $ }}-charon-relay:3640/enr"
+        - name: CHARON_PRIVATE_KEY_FILE
+          value: "/data/charon/charon-enr-private-key"
+        - name: CHARON_LOCK_FILE
+          value: "/data/charon/cluster-lock.json"
+        volumeMounts:
+        - name: charon-data
+          mountPath: /data/charon
+        - name: charon-keys
+          mountPath: /data/charon/charon-enr-private-key
+          subPath: charon-enr-private-key
+        - name: charon-keys
+          mountPath: /data/charon/cluster-lock.json
+          subPath: cluster-lock.json
+      - name: validator
+        image: {{ $type.image }}:{{ $type.version }}
+        resources:
+          {{- toYaml $.Values.validators.resources | nindent 12 }}
+        env:
+        - name: BEACON_NODE_ENDPOINT
+          value: "http://localhost:3600"
+        volumeMounts:
+        - name: validator-data
+          mountPath: /data/validator
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.json
+          subPath: keystore-0.json
+        - name: validator-keys
+          mountPath: /data/validator/keystore-0.txt
+          subPath: keystore-0.txt
+      volumes:
+      - name: charon-keys
+        secret:
+          secretName: {{ include "ha-validator-cluster.fullname" $ }}-charon-node{{ $index }}-keys
+      - name: validator-keys
+        secret:
+          secretName: {{ include "ha-validator-cluster.fullname" $ }}-validator-node{{ $index }}-keys
+  volumeClaimTemplates:
+  - metadata:
+      name: charon-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      {{- if $.Values.validators.storage.storageClass }}
+      storageClassName: {{ $.Values.validators.storage.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ $.Values.validators.storage.size | default "1Gi" }}
+  - metadata:
+      name: validator-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      {{- if $.Values.validators.storage.storageClass }}
+      storageClassName: {{ $.Values.validators.storage.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ $.Values.validators.storage.size | default "1Gi" }}
+{{- end }}

@@ -1,0 +1,60 @@
+{{- if .Values.geth.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-geth
+spec:
+  serviceName: "geth"
+  replicas: {{ .Values.geth.replicaCount }}
+  selector:
+    matchLabels:
+      app: geth
+  template:
+    metadata:
+      labels:
+        app: geth
+    spec:
+      containers:
+      - name: geth
+        image: ethereum/client-go:{{ .Values.global.gethVersion }}
+        ports:
+        - containerPort: 30303
+        - containerPort: 8545
+        - containerPort: 8551
+        resources:
+          {{- toYaml .Values.geth.resources | nindent 12 }}
+        command:
+        - /bin/sh
+        - -c
+        - >
+          geth
+          --{{ .Values.global.network }}
+          --http
+          --http.addr=0.0.0.0
+          --http.vhosts=*
+          --http.api=eth,net,engine,admin
+          --authrpc.addr=0.0.0.0
+          --authrpc.port=8551
+          --authrpc.vhosts=*
+          --authrpc.jwtsecret=/root/.ethereum/jwt.hex
+          --syncmode=snap
+        volumeMounts:
+        - name: geth-data
+          mountPath: /root/.ethereum
+        - name: jwt
+          mountPath: /root/.ethereum/jwt.hex
+          subPath: jwt.hex
+      volumes:
+      - name: jwt
+        secret:
+          secretName: {{ .Release.Name }}-jwt
+  volumeClaimTemplates:
+  - metadata:
+      name: geth-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.geth.storage.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.geth.storage.size }}
+{{- end }}

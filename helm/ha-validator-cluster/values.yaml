@@ -1,0 +1,109 @@
+global:
+  charonVersion: v1.0.0
+  lighthouseVersion: v5.3.0
+  tekuVersion: 24.2.0
+  gethVersion: v1.14.8
+  network: holesky
+
+geth:
+  enabled: true
+  replicaCount: 1
+  storage: 
+    size: 1Ti
+    storageClass: standard
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 8Gi
+
+  
+
+lighthouse:
+  enabled: true
+  replicaCount: 1
+  checkpointSyncUrl: https://checkpoint-sync.holesky.ethpandaops.ios
+  storage:
+    size: 100Gi
+    storageClass: standard
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 8Gi
+
+
+charonRelay:
+  enabled: true
+  replicaCount: 1
+  storage:
+    size: 10Gi
+    storageClass: standard
+
+validators:
+  replicaCount: 2
+  resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1
+        memory: 2Gi
+  storage: 
+    size: 100Gi
+    storageClass: standard
+  types:
+    - name: lighthouse
+      image: sigp/lighthouse
+      version: v5.3.0
+    - name: nimbus
+      image: statusim/nimbus-eth2
+      version: multiarch-v23.7.0
+      
+monitoring:
+  prometheus:
+      version: v2.50.1
+      enabled: true
+      config:
+        global:
+          scrape_interval: 30s # Set the scrape interval to every 30 seconds.
+          evaluation_interval: 30s # Evaluate rules every 30 seconds.
+        remote_write:
+          - url: https://vm.monitoring.gcp.obol.tech/write
+            authorization:
+              credentials: $PROM_REMOTE_WRITE_TOKEN
+            write_relabel_configs:
+              - source_labels: [job]
+                regex: "charon(.*)"
+                action: keep # Keeps charon metrics and drop metrics from other containers.
+        scrape_configs:
+          - job_name: "charon-0"
+            static_configs:
+              - targets: ["{{ .Release.Name }}-lighthouse-validator-0.{{ .Release.Name }}-lighthouse-validator:3620"]
+          - job_name: "charon-1"
+            static_configs:
+              - targets: ["{{ .Release.Name }}-nimbus-validator-0.{{ .Release.Name }}-nimbus-validator:3620"]
+          - job_name: "validator 1 Lighthouse"
+            static_configs:
+              - targets: ["{{ .Release.Name }}-lighthouse-validator-0.{{ .Release.Name }}-lighthouse-validator:5064"]
+          - job_name: "validator 2 Nimbus"
+            static_configs:
+              - targets: ["{{ .Release.Name }}-nimbus-validator-0.{{ .Release.Name }}-nimbus-validator:8008"]
+          - job_name: "node-exporter"
+            static_configs:
+              - targets: ["{{ .Release.Name }}-node-exporter:9100"]
+
+
+  grafana:
+    enabled: true
+    version: 10.3.3
+  nodeExporter:
+    enabled: true
+    version: v1.7.0
+  jaeger:
+    enabled: true
+    version: 1.55.0
