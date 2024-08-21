@@ -1,7 +1,7 @@
 # Project Name
 
 ## Description
-This project aims to comprehensive and cost-effective way to run one or more highly available validator. Included in this project are monitoring, lifecycle management and costing.
+This project aims to provide comprehensive and cost-effective way to run one or more highly available validator. Included in this project are monitoring, lifecycle management and costing.
 
 Below is an index of the main sections, each linking to its own detailed documentation.
 
